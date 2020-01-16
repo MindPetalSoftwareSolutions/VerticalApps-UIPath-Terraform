@@ -19,9 +19,6 @@ Terraform v0.12.3
 
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-----:|:-----:|
-| aws\_region | The region for UiPath Orchestrator deployment. | string | `"eu-west-2"` | yes |
-| access\_key | AWS Access Key. | string | `"SAGFGDGVGDBXCVER"` | yes |
-| secret\_key | AWS Secret Access Key. | string | `"+SAGFGDGVGDBXCVERSAGFGDGVGDBXCVER=="` | yes |
 | key\_name | Name of the SSH keypair to use in AWS. | map | `<map>` | yes |
 | aws\_app\_instance\_type | Orchestrator Instance type. | string | `"m4.large"` | yes |
 | environment | Environment name, used as prefix to tag the name of the resources. | string | `"dev"` | yes |
