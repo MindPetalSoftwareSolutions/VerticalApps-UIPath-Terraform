@@ -250,7 +250,10 @@ resource "aws_instance" "splunk" {
       command = <<EOD
   cat > aws-hosts << EOF
   [splunk]
-  ${aws_instance.splunk.public_ip}
+  ${aws_instance.splunk.public_dns}
+  [dev:vars]
+  ansible_user=ec2-user
+  ansible_ssh_private_key_file=/Users/a805838/Documents/verticalapps-devops.pem
   #EOF
   EOD
   }
@@ -258,7 +261,7 @@ resource "aws_instance" "splunk" {
 # ansible playbook
 # run the ansible playbook to deploy splunk
   provisioner "local-exec" {
-      command = "sleep 6m && ansible-playbook -vv -i aws-hosts splunk-install.yml"
+      command = "sleep 6m && ansible-playbook -vv -i aws-hosts splunk splunk-install.yml"
   }
 }
 
