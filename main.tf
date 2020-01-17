@@ -16,7 +16,7 @@ resource "aws_vpc" "splunk_vpc" {
   cidr_block = "10.0.0.0/16"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "splunk_vpc-${var.environment}"
   }
 }
@@ -51,7 +51,7 @@ resource "aws_subnet" "splunk_public_subnet" {
 cidr_block                = "10.0.2.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
-  tags {
+  tags = {
     Name = "splunk-public-${var.environment}"
   }
 }
@@ -61,7 +61,7 @@ resource "aws_subnet" "splunk_private_subnet" {
   cidr_block              = "10.0.3.0/24"
   map_public_ip_on_launch = false
   availability_zone = data.aws_availability_zones.available.names[0]
-  tags {
+  tags = {
     Name = "splunk-private-${var.environment}"
   }
 }
@@ -92,7 +92,7 @@ resource "aws_internet_gateway" "main" {
 resource "aws_internet_gateway" "splunk_internet_gateway" {
   vpc_id = aws_vpc.splunk_vpc.id
   
-  tags {
+  tags = {
     Name = "splunk_igw-${var.environment}"
    }
 }
@@ -106,7 +106,7 @@ resource "aws_route_table" "main" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags {
+  tags = {
     Name = "main-${var.environment}"
   }
 }
@@ -119,7 +119,7 @@ resource "aws_route_table" "splunk_public_rt" {
     gateway_id = aws_internet_gateway.splunk_internet_gateway.id
   }
 
-  tags {
+  tags = {
     Name = "splunk_public-${var.environment}"
   }
 }
@@ -127,8 +127,8 @@ resource "aws_route_table" "splunk_public_rt" {
 resource "aws_default_route_table" "splunk_private_rt" {
   default_route_table_id = aws_vpc.splunk_vpc.default_route_table_id
 
-  tags {
-   Name = "splunk_private-${var.environment}"
+  tags = {
+    Name = "splunk_private-${var.environment}"
   }
 }
 
@@ -248,46 +248,46 @@ resource "aws_security_group" "splunk_public_sg" {
 
 # inbound internet access
   ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port = 80
-    to_port   = 80
-    protocol  = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
 
   ingress {
-    from_port = 9997
-    to_port   = 9997
-    protocol  = "tcp"
+    from_port   = 9997
+    to_port     = 9997
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port = 8000
-    to_port   = 8000
-    protocol  = "tcp"
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
 # outbound internet access
   egress {
-    from_port = 0
-    to_port = 0 
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0 
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -383,7 +383,7 @@ resource "aws_instance" "splunk" {
   user_data                 = "${file("user_data")}"
   subnet_id                 = aws_subnet.splunk_public_subnet.id
   
-  tags {
+  tags = {
     Name = "splunk-${var.environment}"
   }
  
