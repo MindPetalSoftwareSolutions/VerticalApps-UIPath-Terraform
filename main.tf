@@ -251,7 +251,7 @@ resource "aws_instance" "splunk" {
   cat > aws-hosts << EOF
   [splunk]
   ${aws_instance.splunk.public_dns}
-  [dev:vars]
+  [splunk:vars]
   ansible_user=ec2-user
   ansible_ssh_private_key_file=/Users/a805838/Documents/verticalapps-devops.pem
   #EOF
