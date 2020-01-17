@@ -376,7 +376,7 @@ resource "aws_instance" "uipath_app_server" {
 ### - Splunk Server ###
 resource "aws_instance" "splunk" {
   depends_on                = [aws_subnet.splunk_public_subnet]
-  ami                       = data.aws_ami.amazon_linux_ami.image.id
+  ami                       = data.aws_ami.amazon_linux_ami.image_id
   instance_type             = var.aws_splunk_instance_type
   key_name                  = "${lookup(var.key_name, var.aws_region)}"
   vpc_security_group_ids    = [aws_security_group.splunk_public_sg.id]
