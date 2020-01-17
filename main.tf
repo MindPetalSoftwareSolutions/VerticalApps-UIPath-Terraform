@@ -12,15 +12,6 @@ resource "aws_vpc" "uipath" {
   }
 }
 
-resource "aws_vpc" "splunk_vpc" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_hostnames = true
-
-  tags = {
-    Name = "splunk_vpc-${var.environment}"
-  }
-}
-
 # Declare the data source
 data "aws_availability_zones" "available" {
 }
@@ -46,40 +37,6 @@ resource "aws_subnet" "secondary" {
   }
 }
 
-resource "aws_subnet" "splunk_public_subnet" {
-  vpc_id                  = aws_vpc.splunk_vpc.id
-cidr_block                = "10.0.2.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  tags = {
-    Name = "splunk-public-${var.environment}"
-  }
-}
-
-resource "aws_subnet" "splunk_private_subnet" {
-  vpc_id                  = aws_vpc.splunk_vpc.id
-  cidr_block              = "10.0.3.0/24"
-  map_public_ip_on_launch = false
-  availability_zone = data.aws_availability_zones.available.names[0]
-  tags = {
-    Name = "splunk-private-${var.environment}"
-  }
-}
-
-### Subnet Associations ###
-
-# splunk public
-resource "aws_route_table_association" "splunk_public_assoc" {
-  subnet_id       = aws_subnet.splunk_public_subnet.id
-  route_table_id  = aws_route_table.splunk_public_rt.id
-}
-
-# splunk private
-resource "aws_route_table_association" "splunk_private_assoc" {
-  subnet_id       = aws_subnet.splunk_private_subnet.id
-  route_table_id  = aws_default_route_table.splunk_private_rt.id
-}
-
 ### IGW for external calls ###
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.uipath.id
@@ -87,14 +44,6 @@ resource "aws_internet_gateway" "main" {
   tags = {
     Name = "${var.application}-${var.environment}"
   }
-}
-
-resource "aws_internet_gateway" "splunk_internet_gateway" {
-  vpc_id = aws_vpc.splunk_vpc.id
-  
-  tags = {
-    Name = "splunk_igw-${var.environment}"
-   }
 }
 
 ### Route Table ###
@@ -107,28 +56,7 @@ resource "aws_route_table" "main" {
   }
 
   tags = {
-    Name = "main-${var.environment}"
-  }
-}
-
-resource "aws_route_table" "splunk_public_rt" {
-  vpc_id = aws_vpc.splunk_vpc.id
-  
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.splunk_internet_gateway.id
-  }
-
-  tags = {
-    Name = "splunk_public-${var.environment}"
-  }
-}
-
-resource "aws_default_route_table" "splunk_private_rt" {
-  default_route_table_id = aws_vpc.splunk_vpc.default_route_table_id
-
-  tags = {
-    Name = "splunk_private-${var.environment}"
+    Name = "${var.application}-${var.environment}"
   }
 }
 
@@ -240,80 +168,6 @@ resource "aws_security_group" "uipath_stack" {
   }
 }
 
-resource "aws_security_group" "splunk_public_sg" {
-  name        = "splunk_public_sg"
-  description = "Security group for Splunk public access"
-  vpc_id      = aws_vpc.splunk_vpc.id
-
-
-# inbound internet access
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-  ingress {
-    from_port   = 9997
-    to_port     = 9997
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-# outbound internet access
-  egress {
-    from_port   = 0
-    to_port     = 0 
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "splunk_private_sg" {
-  name        = "splunk_private_sg"
-  description = "Security group for Splunk private access"
-  vpc_id      = aws_vpc.splunk_vpc.id
-
-# inbound internet access
-  ingress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
-
-# outbound internet access
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 ### INLINE - RDS DB MSSQL ###
 resource "aws_db_subnet_group" "default" {
   name        = "${var.environment}-rds-mssql-subnet-group"
@@ -375,14 +229,18 @@ resource "aws_instance" "uipath_app_server" {
 
 ### - Splunk Server ###
 resource "aws_instance" "splunk" {
-  depends_on                  = [aws_subnet.splunk_public_subnet]
+  depends_on = [
+    aws_subnet.primary,
+    aws_db_instance.default_mssql,
+    aws_instance.uipath_app_server,
+  ]
   ami                         = data.aws_ami.amazon_linux_ami.id
   associate_public_ip_address = true
   instance_type               = var.aws_splunk_instance_type
   key_name                    = "${lookup(var.key_name, var.aws_region)}"
-  vpc_security_group_ids      = [aws_security_group.splunk_public_sg.id]
+  vpc_security_group_ids      = [aws_security_group.uipath_stack.id]
   user_data                   = file("user-data")
-  subnet_id                   = aws_subnet.splunk_public_subnet.id
+  subnet_id                   = aws_subnet.primary.id
   
   tags = {
     Name = "splunk-${var.environment}"
