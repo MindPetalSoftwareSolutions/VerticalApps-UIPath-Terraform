@@ -261,7 +261,7 @@ resource "aws_instance" "splunk" {
 # ansible playbook
 # run the ansible playbook to deploy splunk
   provisioner "local-exec" {
-      command = "sleep 6m && ansible-playbook -vv -i aws-hosts splunk splunk-install.yml"
+      command = "ansible-playbook -vv -i aws-hosts splunk-install.yml"
   }
 }
 

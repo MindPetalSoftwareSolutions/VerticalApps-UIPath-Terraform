@@ -1,5 +1,10 @@
 --- # splunk on a aws server
 
+- name: Wait 600 seconds for target connection to become reachable/usable
+  wait_for_connection:
+    delay: 60
+    timeout: 300
+
 - hosts: splunk
   become: yes
   remote_user: ec2-user
