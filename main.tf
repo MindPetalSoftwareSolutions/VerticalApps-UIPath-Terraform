@@ -380,7 +380,7 @@ resource "aws_instance" "splunk" {
   instance_type             = var.aws_splunk_instance_type
   key_name                  = "${lookup(var.key_name, var.aws_region)}"
   vpc_security_group_ids    = [aws_security_group.splunk_public_sg.id]
-  user_data                 = "${file("user_data")}"
+  user_data                 = file("/user_data")"
   subnet_id                 = aws_subnet.splunk_public_subnet.id
   
   tags = {
