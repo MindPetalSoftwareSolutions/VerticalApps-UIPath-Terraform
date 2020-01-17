@@ -1,0 +1,16 @@
+--- # splunk on a aws server
+
+- hosts: splunk
+  become: yes
+  remote_user: ec2-user
+  tasks:
+    - name: Download Splunk
+      get_url: url=https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture=x86_64&platform=linux&version=8.0.1&product=splunk&filename=splunk-8.0.1-6db836e2fb9e-Linux-x86_64.tgz&wget=true force=yes
+    - name: Move the splunk tar
+      command: mv splunk-8.0.1-6db836e2fb9e-Linux-x86_64.tgz /opt
+    -  name: Extract Splunk Binary
+      command: chdir=/opt tar -xzvf splunk-8.0.1-6db836e2fb9e-Linux-x86_64.tgz 
+    - name: Start splunk
+      command: /opt/splunk/bin/splunk start --accept-license --answer-yes
+    - name: Enable Splunk Boot Start
+      command: /opt/splunk/bin/splunk enable boot-start

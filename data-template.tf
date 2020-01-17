@@ -32,3 +32,12 @@ data "aws_ami" "server_ami" {
   }
 }
 
+data "aws_ami" "amazon_linux_ami" {
+  most_recent = true
+  owners      = ["amazon", "self"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm"]
+  }
+}
