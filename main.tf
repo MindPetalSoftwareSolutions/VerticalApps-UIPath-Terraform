@@ -390,7 +390,7 @@ resource "aws_instance" "splunk" {
  
   provisioner "local-exec"  {
       command = <<EOD
-  cat > aws_hosts << EOF
+  cat > aws-hosts << EOF
   [splunk]
   ${aws_instance.splunk.public_ip}
   #EOF
