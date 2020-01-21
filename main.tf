@@ -54,9 +54,13 @@ resource "aws_route_table" "main" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
   }
+
+  tags = {
+    Name = "${var.application}-${var.environment}"
+  }
 }
 
-### Main Route Table ###
+### Main Route Table Association ###
 resource "aws_main_route_table_association" "main" {
   vpc_id         = aws_vpc.uipath.id
   route_table_id = aws_route_table.main.id
@@ -220,6 +224,44 @@ resource "aws_instance" "uipath_app_server" {
 
   tags = {
     Name = "${var.application}-${var.environment}"
+  }
+}
+
+### - Splunk Server ###
+resource "aws_instance" "splunk" {
+  depends_on = [
+    aws_subnet.primary,
+    aws_db_instance.default_mssql,
+    aws_instance.uipath_app_server,
+  ]
+  ami                         = data.aws_ami.amazon_linux_ami.id
+  associate_public_ip_address = true
+  instance_type               = var.aws_splunk_instance_type
+  key_name                    = "${lookup(var.key_name, var.aws_region)}"
+  vpc_security_group_ids      = [aws_security_group.uipath_stack.id]
+  user_data                   = file("user-data")
+  subnet_id                   = aws_subnet.primary.id
+  
+  tags = {
+    Name = "splunk-${var.environment}"
+  }
+ 
+  provisioner "local-exec"  {
+      command = <<EOD
+  cat > hosts << EOF
+  [splunk]
+  ${aws_instance.splunk.public_dns}
+  [splunk:vars]
+  ansible_user=ec2-user
+  ansible_ssh_private_key_file=/Users/a805838/Documents/verticalapps-devops.pem
+  #EOF
+  EOD
+  }
+
+# ansible playbook
+# run the ansible playbook to deploy splunk
+  provisioner "local-exec" {
+      command = "ansible-playbook -vv -i hosts -u ec2-user splunk-install.yml"
   }
 }
 
