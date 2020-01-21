@@ -248,7 +248,7 @@ resource "aws_instance" "splunk" {
  
   provisioner "local-exec"  {
       command = <<EOD
-  cat > aws-hosts << EOF
+  cat > hosts << EOF
   [splunk]
   ${aws_instance.splunk.public_dns}
   [splunk:vars]
@@ -261,7 +261,7 @@ resource "aws_instance" "splunk" {
 # ansible playbook
 # run the ansible playbook to deploy splunk
   provisioner "local-exec" {
-      command = "ansible-playbook -vv -i aws-hosts splunk-install.yml"
+      command = "ansible-playbook -vv -i hosts -u ec2-user splunk-install.yml"
   }
 }
 

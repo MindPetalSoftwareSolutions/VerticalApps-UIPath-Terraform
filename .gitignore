@@ -2,3 +2,4 @@
 /variables.tf
 /.terraform/*
 /aws-hosts
+/hosts
