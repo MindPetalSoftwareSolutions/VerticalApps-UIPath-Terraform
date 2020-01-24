@@ -203,11 +203,11 @@ resource "aws_instance" "uipath_app_server" {
       aws_subnet.primary,
       aws_db_instance.default_mssql,
     ]
-    ami           = data.aws_ami.server_ami.image_id
-    instance_type = var.aws_app_instance_type
-    key_name      = "${lookup(var.key_name, var.aws_region)}"
-    user_data = "${data.template_file.init.rendered}"
-    subnet_id = aws_subnet.primary.id
+    ami             = data.aws_ami.server_ami.image_id
+    instance_type   = var.aws_app_instance_type
+    key_name        = "${lookup(var.key_name, var.aws_region)}"
+    user_data       = "${data.template_file.init.rendered}"
+    subnet_id       = aws_subnet.primary.id
 
     ebs_block_device {
       device_name           = "/dev/sda1"
@@ -226,14 +226,16 @@ resource "aws_instance" "uipath_app_server" {
       Name = "${var.application}-${var.environment}"
     }
 
-    provisioner "remote-exec" {
+    /* provisioner "remote-exec" {
         connection {
             type        = "winrm"
             user        = "Adminstrator"
             password    = "${var.admin_password}"
             host        = "${aws_instance.uipath_app_server.public_ip}"
+            https       = true
+            insecure    = true
         }
-    }
+    } */
 }
 
 ### - Splunk Server ###
