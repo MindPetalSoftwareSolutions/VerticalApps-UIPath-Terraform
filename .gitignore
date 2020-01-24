@@ -1,5 +1,4 @@
 .DS_Store
-/variables.tf
 /.terraform/*
 /aws-hosts
 /hosts

@@ -225,6 +225,15 @@ resource "aws_instance" "uipath_app_server" {
     tags = {
       Name = "${var.application}-${var.environment}"
     }
+
+    provisioner "remote-exec" {
+        connection {
+            type        = "winrm"
+            user        = "Adminstrator"
+            password    = "${var.admin_password}"
+            host        = "${aws_instance.uipath_app_server.public_ip}"
+        }
+    }
 }
 
 ### - Splunk Server ###
