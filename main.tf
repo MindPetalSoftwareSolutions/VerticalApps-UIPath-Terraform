@@ -197,17 +197,43 @@ resource "aws_db_instance" "default_mssql" {
     final_snapshot_identifier = "${var.db_name}-mssql-final-snapshot"
 }
 
+# Generate a password for our WinRM connection
+resource "random_string" "winrm_password" {
+  length = 16
+  special = false
+}
+
+# User-data
+data "template_file" "user_data" {
+  template = "${file("winrm_config.tpl")}"
+}
+
 ### INLINE - W2016 STD UiPath Orchestrator ###
 resource "aws_instance" "uipath_app_server" {
     depends_on = [
       aws_subnet.primary,
       aws_db_instance.default_mssql,
     ]
-    ami           = data.aws_ami.server_ami.image_id
-    instance_type = var.aws_app_instance_type
-    key_name      = "${lookup(var.key_name, var.aws_region)}"
-    user_data = "${data.template_file.init.rendered}"
-    subnet_id = aws_subnet.primary.id
+    ami             = data.aws_ami.server_ami.image_id
+    instance_type   = var.aws_app_instance_type
+    key_name        = "${lookup(var.key_name, var.aws_region)}"
+    subnet_id       = aws_subnet.primary.id
+    user_data     = <<EOF
+<powershell>
+net user ${var.win_username} '${var.win_password}' /add /y
+net localgroup administrators ${var.win_username} /add
+winrm quickconfig -q
+winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="300"}'
+winrm set winrm/config '@{MaxTimeoutms="1800000"}'
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+winrm set winrm/config/service/auth '@{Basic="true"}'
+netsh advfirewall firewall add rule name="WinRM 5985" protocol=TCP dir=in localport=5985 action=allow
+netsh advfirewall firewall add rule name="WinRM 5986" protocol=TCP dir=in localport=5986 action=allow
+net stop winrm
+sc.exe config winrm start=auto
+net start winrm
+</powershell>
+EOF
 
     ebs_block_device {
       device_name           = "/dev/sda1"
@@ -226,12 +252,17 @@ resource "aws_instance" "uipath_app_server" {
       Name = "${var.application}-${var.environment}"
     }
 
-    provisioner "remote-exec" {
+    provisioner "file" {
+        source          = "ps-scripts/Install-UiPathOrchestrator.ps1"
+        destination     = "C:/UiPath.ps1"
         connection {
-            type        = "winrm"
-            user        = "Adminstrator"
-            password    = "${var.admin_password}"
             host        = "${aws_instance.uipath_app_server.public_ip}"
+            port        = 5986
+            type        = "winrm"
+            user        = "${var.win_username}"
+            password    = "${var.win_password}"
+            insecure    = true
+            https       = true
         }
     }
 }

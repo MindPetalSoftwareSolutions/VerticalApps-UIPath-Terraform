@@ -218,6 +218,16 @@ variable "admin_password" {
   default     = "WinP@55!"
 }
 
+variable "win_password" {
+  description = "Windows Administrator password used to login in the provisioned VMs."
+  default     = "WinP@55!"
+}
+
+variable "win_username" {
+  description = "Windows Administrator password used to login in the provisioned VMs."
+  default     = "WinP@55!"
+}
+
 variable "orchestrator_passphrase" {
   description = "Orchestrator Passphrase used to generate NuGet API keys, App encryption key and machine keys."
   default = "!asfgre2%gsd"
